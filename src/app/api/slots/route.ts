@@ -46,6 +46,10 @@ export async function GET() {
     return NextResponse.json({
       slots: enriched,
       _debug_supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      _debug_service_key_tail: (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').slice(-12),
+      _debug_raw_ad_slots_count: allSlots?.length ?? 0,
+      _debug_raw_first_slot: allSlots?.[0] ?? null,
+      _debug_fetched_at: new Date().toISOString(),
     });
   } catch (err) {
     console.error(err);
