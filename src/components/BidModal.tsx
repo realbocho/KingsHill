@@ -157,7 +157,7 @@ export function BidModal({ slot, onClose }: Props) {
           'success'
         );
         if (data.user) {
-          dispatch({ type: 'UPDATE_USER_WALLET', wallet: data.user.wallet, total_earned: data.user.total_earned, total_spent: data.user.total_spent });
+          dispatch({ type: 'UPDATE_USER_WALLET', wallet: data.user.wallet, withdrawable_balance: data.user.withdrawable_balance, total_earned: data.user.total_earned, total_spent: data.user.total_spent });
         }
         await refreshSlots();
         await refreshWallet();
