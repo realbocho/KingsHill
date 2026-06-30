@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       .limit(50),
     supabase
       .from('users')
-      .select('wallet, total_earned, total_spent')
+      .select('wallet, withdrawable_balance, total_earned, total_spent')
       .eq('id', userId)
       .single(),
   ]);
