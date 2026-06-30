@@ -119,7 +119,8 @@ begin
     total_bids    = total_bids + 1,
     total_volume  = total_volume + p_bid_amount,
     total_fees_collected = total_fees_collected + v_platform_fee,
-    updated_at    = now();
+    updated_at    = now()
+  where id = (select id from platform_stats limit 1);
 
   return jsonb_build_object(
     'success',           true,
