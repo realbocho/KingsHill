@@ -43,7 +43,10 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ slots: enriched });
+    return NextResponse.json({
+      slots: enriched,
+      _debug_supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Failed to fetch slots' }, { status: 500 });
