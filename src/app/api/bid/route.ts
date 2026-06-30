@@ -64,7 +64,7 @@ export const POST = withApiHandler('bid', async (req: NextRequest) => {
 
   const { data: user } = await supabase
     .from('users')
-    .select('wallet, total_earned, total_spent')
+    .select('wallet, withdrawable_balance, total_earned, total_spent')
     .eq('id', userId)
     .single();
 
