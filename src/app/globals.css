@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-gold: #FFD700;
+  --brand-amber: #F59E0B;
+  --brand-dark: #0A0A0F;
+  --brand-surface: #12121A;
+  --brand-card: #1A1A26;
+  --brand-border: #2A2A3A;
+  --brand-muted: #4A4A6A;
+  --brand-text: #E8E8F0;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--brand-dark);
+  color: var(--brand-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+}
+
+/* Telegram Mini App safe areas */
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+/* Gold shimmer text */
+.gold-shimmer {
+  background: linear-gradient(90deg, #FFD700, #FFF8DC, #F59E0B, #FFD700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Slot card glow on hover */
+.slot-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.slot-card:hover, .slot-card:active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+}
+
+/* Occupied slot pulse */
+.slot-occupied {
+  animation: pulse-gold 3s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--brand-surface); }
+::-webkit-scrollbar-thumb { background: var(--brand-border); border-radius: 2px; }
+
+/* Bottom nav */
+.bottom-nav {
+  background: rgba(18, 18, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--brand-border);
+}
+
+/* Input */
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* Ticker */
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.animate-bid-flash {
+  animation: bid-flash 0.6s ease-out;
+}
+
+/* Tier badges */
+.tier-prime    { background: linear-gradient(135deg, #FFD700, #F59E0B); color: #0A0A0F; }
+.tier-corner   { background: linear-gradient(135deg, #A78BFA, #7C3AED); color: white; }
+.tier-standard { background: #2A2A3A; color: #9CA3AF; }
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Toast */
+.toast-enter {
+  animation: toast-in 0.3s ease-out;
+}
+@keyframes toast-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
