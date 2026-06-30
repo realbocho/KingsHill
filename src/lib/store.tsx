@@ -97,13 +97,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // admin removal happens anywhere, no polling delay.
   useRealtimeSlots({ onChange: refreshSlots, enabled: !!state.user });
 
-  // Fallback poll, much less frequent than before (was 10s). This only
-  // matters if the websocket connection drops and doesn't reconnect in
-  // time — Realtime handles reconnection itself, this is just a safety
-  // net so the board can't go stale indefinitely on a flaky connection.
+  // Fallback poll. Realtime handles the normal case; this only
+  // matters if the websocket connection drops and doesn't reconnect.
+  // Lengthened from 30s to 90s — on Supabase's free-tier connection
+  // budget, every active user polling every 30s adds up fast across
+  // concurrent sessions, and Realtime already covers the common case
+  // instantly, so this only needs to be "eventually correct", not fast.
   useEffect(() => {
     if (!state.user) return;
-    const interval = setInterval(refreshSlots, 30000);
+    const interval = setInterval(refreshSlots, 90000);
     return () => clearInterval(interval);
   }, [state.user, refreshSlots]);
 
