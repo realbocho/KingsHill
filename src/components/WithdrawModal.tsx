@@ -15,10 +15,13 @@ export function WithdrawModal({ onClose }: Props) {
   const [loading,   setLoading]   = useState(false);
   const [confirmStep, setConfirmStep] = useState(false);
 
-  const balance = state.user?.wallet ?? 0;
+  const totalBalance        = state.user?.wallet ?? 0;
+  const withdrawableBalance = state.user?.withdrawable_balance ?? 0;
+  const bonusBalance        = Math.max(0, totalBalance - withdrawableBalance);
+
   const amountNum = parseFloat(amount) || 0;
   const addressValid = isLikelyTonAddress(toAddress.trim());
-  const isValid = addressValid && amountNum >= 0.5 && amountNum <= balance;
+  const isValid = addressValid && amountNum >= 0.5 && amountNum <= withdrawableBalance;
 
   async function submitWithdrawal() {
     if (!state.user || !isValid) return;
@@ -37,7 +40,8 @@ export function WithdrawModal({ onClose }: Props) {
         showToast('Withdrawal queued — processed within a few minutes', 'success');
         dispatch({
           type: 'UPDATE_USER_WALLET',
-          wallet: balance - amountNum,
+          wallet: totalBalance - amountNum,
+          withdrawable_balance: withdrawableBalance - amountNum,
           total_earned: state.user.total_earned,
           total_spent: state.user.total_spent,
         });
@@ -64,6 +68,17 @@ export function WithdrawModal({ onClose }: Props) {
 
           {!confirmStep ? (
             <>
+              {bonusBalance > 0.0001 && (
+                <div className="rounded-xl border border-yellow-900/40 bg-yellow-950/20 p-3 mb-4">
+                  <p className="text-xs font-bold text-yellow-300 mb-1">ℹ️ Some of your balance is bonus credit</p>
+                  <p className="text-[11px] text-yellow-200/80 leading-relaxed">
+                    {bonusBalance.toFixed(4)} GRAM of your {totalBalance.toFixed(4)} GRAM total is promotional
+                    bonus credit (e.g. the signup bonus) — it can be used to bid, but isn't backed by real TON
+                    and can't be withdrawn. Only GRAM from deposits or auction profits is withdrawable.
+                  </p>
+                </div>
+              )}
+
               <div className="mb-4">
                 <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
                   Destination TON Address
@@ -90,18 +105,18 @@ export function WithdrawModal({ onClose }: Props) {
                   onChange={e => setAmount(e.target.value)}
                   step="0.01"
                   min="0.5"
-                  max={balance}
+                  max={withdrawableBalance}
                   placeholder="0.50"
                   className="w-full bg-brand-surface border border-brand-border focus:border-brand-gold/40 rounded-xl px-4 py-3 text-lg font-bold font-mono text-brand-text outline-none"
                 />
                 <div className="flex items-center justify-between mt-1.5">
                   <p className="text-xs text-brand-muted">Min: 0.5 GRAM</p>
                   <p className="text-xs text-brand-muted">
-                    Available: <span className="text-brand-gold font-mono">{balance.toFixed(4)} GRAM</span>
+                    Withdrawable: <span className="text-brand-gold font-mono">{withdrawableBalance.toFixed(4)} GRAM</span>
                   </p>
                 </div>
                 <button
-                  onClick={() => setAmount(balance.toFixed(4))}
+                  onClick={() => setAmount(withdrawableBalance.toFixed(4))}
                   className="mt-2 text-xs px-3 py-1.5 bg-brand-surface border border-brand-border rounded-lg text-brand-muted"
                 >
                   Max
@@ -119,7 +134,7 @@ export function WithdrawModal({ onClose }: Props) {
                 disabled={!isValid}
                 className="w-full py-4 rounded-xl font-bold text-base bg-brand-gold text-brand-dark disabled:bg-brand-surface disabled:text-brand-muted transition-all"
               >
-                {!addressValid ? 'Enter Valid Address' : amountNum < 0.5 ? 'Minimum 0.5 GRAM' : amountNum > balance ? 'Insufficient Balance' : 'Continue'}
+                {!addressValid ? 'Enter Valid Address' : amountNum < 0.5 ? 'Minimum 0.5 GRAM' : amountNum > withdrawableBalance ? 'Exceeds Withdrawable Balance' : 'Continue'}
               </button>
             </>
           ) : (
