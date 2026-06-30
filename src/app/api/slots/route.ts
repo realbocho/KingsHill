@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -49,7 +51,10 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ slots: enriched });
+    return NextResponse.json(
+      { slots: enriched },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } }
+    );
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Failed to fetch slots' }, { status: 500 });
