@@ -8,8 +8,14 @@ export async function GET() {
   try {
     const supabase = createServiceClient() as any;
 
-    // Expire old occupancies first
-    await supabase.rpc('expire_occupancies');
+    // Note: expire_occupancies() used to run on every call here, but
+    // that meant every Realtime fallback poll (every 30s, per active
+    // user) and every initial page load also issued an extra RPC
+    // round-trip. The cleanup cron already runs expire_occupancies()
+    // every 5 minutes, which is frequent enough for slot resets to
+    // feel timely without adding load to the hot read path. On a
+    // free-tier connection budget, cutting an unnecessary query out
+    // of the most frequently hit endpoint matters.
 
     const { data: allSlots } = await supabase
       .from('ad_slots')
@@ -19,7 +25,7 @@ export async function GET() {
     const { data: activeOccs } = await supabase
       .from('occupancies')
       .select(`
-        id, slot_id, user_id, bid_amount, ad_text, ad_url, ad_emoji, ad_color, expires_at, is_active, created_at, removed_by_admin,
+        id, slot_id, user_id, bid_amount, ad_text, ad_url, ad_emoji, ad_color, ad_image_path, expires_at, is_active, created_at, removed_by_admin,
         users(id, telegram_id, username, first_name, photo_url)
       `)
       .eq('is_active', true);
@@ -43,14 +49,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({
-      slots: enriched,
-      _debug_supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      _debug_service_key_tail: (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').slice(-12),
-      _debug_raw_ad_slots_count: allSlots?.length ?? 0,
-      _debug_raw_first_slot: allSlots?.[0] ?? null,
-      _debug_fetched_at: new Date().toISOString(),
-    });
+    return NextResponse.json({ slots: enriched });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Failed to fetch slots' }, { status: 500 });
