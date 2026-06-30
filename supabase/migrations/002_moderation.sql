@@ -75,8 +75,12 @@ begin
   update bid_history set
     removed_by_admin = true,
     removal_reason   = p_reason
-  where slot_id = v_occ.slot_id and bidder_id = v_occ.user_id and bid_amount = v_occ.bid_amount
-  order by created_at desc limit 1;
+  where id = (
+    select id from bid_history
+    where slot_id = v_occ.slot_id and bidder_id = v_occ.user_id and bid_amount = v_occ.bid_amount
+    order by created_at desc
+    limit 1
+  );
 
   -- Optional discretionary refund (default 0 — violating content forfeits the stake)
   if p_refund_amount > 0 then
