@@ -41,6 +41,10 @@ export function WalletTab() {
   const spent  = user?.total_spent  ?? 0;
   const roi    = spent > 0 ? ((earned / spent) * 100).toFixed(1) : '—';
 
+  const totalBalance        = user?.wallet ?? 0;
+  const withdrawableBalance = user?.withdrawable_balance ?? 0;
+  const bonusBalance        = Math.max(0, totalBalance - withdrawableBalance);
+
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Balance card */}
@@ -51,10 +55,20 @@ export function WalletTab() {
         <div className="p-4">
           <p className="text-xs text-brand-muted uppercase tracking-widest mb-1">Total Balance</p>
           <div className="flex items-end gap-2">
-            <span className="text-4xl font-bold gold-shimmer">{formatGramsShort(user?.wallet ?? 0)}</span>
+            <span className="text-4xl font-bold gold-shimmer">{formatGramsShort(totalBalance)}</span>
             <span className="text-brand-gold/60 text-lg mb-1 font-mono">GRAM</span>
           </div>
           <p className="text-xs text-brand-muted mt-1">GRAM is TON. Your influence currency.</p>
+
+          {bonusBalance > 0.0001 && (
+            <div className="mt-3 pt-3 border-t border-brand-gold/10 flex items-center justify-between text-xs">
+              <span className="text-brand-muted">
+                <span className="text-green-400 font-mono font-bold">{withdrawableBalance.toFixed(4)}</span> withdrawable
+                {' · '}
+                <span className="text-yellow-400 font-mono font-bold">{bonusBalance.toFixed(4)}</span> bonus (spend-only)
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Stats row */}
