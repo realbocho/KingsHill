@@ -12,6 +12,7 @@ export interface Database {
           last_name:    string | null;
           photo_url:    string | null;
           wallet:       number;
+          withdrawable_balance: number;
           total_earned: number;
           total_spent:  number;
           created_at:   string;
