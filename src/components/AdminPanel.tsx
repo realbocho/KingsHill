@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '@/lib/store';
 import { formatGramsShort, timeAgo } from '@/lib/telegram';
+import { TreasuryPanel } from '@/components/TreasuryPanel';
 import clsx from 'clsx';
 
 interface LiveOcc {
@@ -48,7 +49,7 @@ export function AdminPanel() {
   const { state, refreshSlots, showToast } = useApp();
   const [liveOccs, setLiveOccs] = useState<LiveOcc[]>([]);
   const [reports,  setReports]  = useState<PendingReport[]>([]);
-  const [tab, setTab] = useState<'live' | 'reports'>('reports');
+  const [tab, setTab] = useState<'live' | 'reports' | 'treasury'>('reports');
   const [removing, setRemoving] = useState<string | null>(null);
   const [reasonDraft, setReasonDraft] = useState<Record<string, string>>({});
 
@@ -107,8 +108,9 @@ export function AdminPanel() {
 
       <div className="flex mx-3 mb-3 rounded-xl overflow-hidden border border-brand-border">
         {[
-          { key: 'reports', label: `🚩 Reports (${reports.length})` },
-          { key: 'live',    label: `📡 All Live (${liveOccs.length})` },
+          { key: 'reports',  label: `🚩 Reports (${reports.length})` },
+          { key: 'live',     label: `📡 All Live (${liveOccs.length})` },
+          { key: 'treasury', label: `💰 Treasury` },
         ].map(t => (
           <button
             key={t.key}
@@ -228,6 +230,8 @@ export function AdminPanel() {
             <p className="text-sm text-brand-muted">No live ads right now</p>
           </div>
         )}
+
+        {tab === 'treasury' && <TreasuryPanel />}
       </div>
     </div>
   );
