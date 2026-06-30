@@ -29,7 +29,7 @@ type Action =
   | { type: 'SET_TAB'; tab: AppState['activeTab'] }
   | { type: 'SET_SELECTED_SLOT'; slot: SlotWithOccupancy | null }
   | { type: 'SET_IS_ADMIN'; isAdmin: boolean }
-  | { type: 'UPDATE_USER_WALLET'; wallet: number; total_earned: number; total_spent: number };
+  | { type: 'UPDATE_USER_WALLET'; wallet: number; withdrawable_balance: number; total_earned: number; total_spent: number };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -46,7 +46,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_IS_ADMIN':      return { ...state, isAdmin: action.isAdmin };
     case 'UPDATE_USER_WALLET':
       if (!state.user) return state;
-      return { ...state, user: { ...state.user, wallet: action.wallet, total_earned: action.total_earned, total_spent: action.total_spent } };
+      return { ...state, user: { ...state.user, wallet: action.wallet, withdrawable_balance: action.withdrawable_balance, total_earned: action.total_earned, total_spent: action.total_spent } };
     default: return state;
   }
 }
@@ -84,7 +84,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const res  = await fetch(`/api/wallet?userId=${state.user.id}`);
       const data = await res.json();
       if (data.transactions) dispatch({ type: 'SET_WALLET_TXS', txs: data.transactions });
-      if (data.user) dispatch({ type: 'UPDATE_USER_WALLET', wallet: data.user.wallet, total_earned: data.user.total_earned, total_spent: data.user.total_spent });
+      if (data.user) dispatch({ type: 'UPDATE_USER_WALLET', wallet: data.user.wallet, withdrawable_balance: data.user.withdrawable_balance, total_earned: data.user.total_earned, total_spent: data.user.total_spent });
     } catch {}
   }, [state.user]);
 
