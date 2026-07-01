@@ -68,7 +68,7 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
         first_name:  tgUser.first_name ?? null,
         last_name:   tgUser.last_name  ?? null,
         photo_url:   tgUser.photo_url  ?? null,
-        wallet:      10.0,
+        wallet:      7.0,
       })
       .select()
       .single();
@@ -85,9 +85,9 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
       await client.from('wallet_transactions').insert({
         user_id:       newUser.id,
         type:          'topup',
-        amount:        10.0,
-        balance_after: 10.0,
-        description:   'Welcome bonus — 10 GRAM to get you started!',
+        amount:        7.0,
+        balance_after: 7.0,
+        description:   'Welcome bonus — 7 GRAM to get you started!',
       });
     }
   }
