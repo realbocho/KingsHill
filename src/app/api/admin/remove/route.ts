@@ -22,25 +22,42 @@ export const POST = withApiHandler('admin-remove', async (req: NextRequest) => {
 
   const { data: admin } = await supabase
     .from('admins')
-    .select('id')
+    .select('id, telegram_id')
     .eq('telegram_id', Number(telegramId))
     .single();
   if (!admin) throw new ApiError('Not an admin', 403);
 
+  // Find the admin's user row — admin_remove_occupancy's removed_by
+  // column references users(id), not admins(id).
+  const { data: adminUser } = await supabase
+    .from('users')
+    .select('id')
+    .eq('telegram_id', Number(telegramId))
+    .single();
+  const adminUserId = adminUser?.id ?? null;
+
   const rl = await checkRateLimit({ key: `admin:${telegramId}`, ...RATE_LIMITS.adminAction });
   if (!rl.allowed) tooManyRequests(rl.limit);
 
-  // Fetch occupancy details first so we can notify the affected user
-  // and log the slot name, even after the row is flagged inactive.
   const { data: occBefore } = await supabase
     .from('occupancies')
-    .select('user_id, slot_id, ad_slots(name)')
+    .select('user_id, slot_id')
     .eq('id', occupancyId)
     .single();
 
+  let slotName = 'a slot';
+  if (occBefore?.slot_id) {
+    const { data: slotRow } = await supabase
+      .from('ad_slots')
+      .select('name')
+      .eq('id', occBefore.slot_id)
+      .single();
+    if (slotRow?.name) slotName = slotRow.name;
+  }
+
   const { data, error } = await supabase.rpc('admin_remove_occupancy', {
     p_occupancy_id:  occupancyId,
-    p_admin_id:      admin.id,
+    p_admin_id:      adminUserId,
     p_reason:        reason.trim(),
     p_refund_amount: refundAmount,
   });
@@ -64,7 +81,7 @@ export const POST = withApiHandler('admin-remove', async (req: NextRequest) => {
   if (occBefore?.user_id) {
     notifyContentRemoved(
       occBefore.user_id,
-      occBefore.ad_slots?.name ?? 'a slot',
+      slotName,
       reason.trim(),
       refundAmount
     ).catch((err: unknown) => logger.error('notify_content_removed_failed', { error: String(err) }));
