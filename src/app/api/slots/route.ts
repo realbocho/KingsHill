@@ -10,15 +10,6 @@ export async function GET() {
   try {
     const supabase = createServiceClient() as any;
 
-    // Note: expire_occupancies() used to run on every call here, but
-    // that meant every Realtime fallback poll (every 30s, per active
-    // user) and every initial page load also issued an extra RPC
-    // round-trip. The cleanup cron already runs expire_occupancies()
-    // every 5 minutes, which is frequent enough for slot resets to
-    // feel timely without adding load to the hot read path. On a
-    // free-tier connection budget, cutting an unnecessary query out
-    // of the most frequently hit endpoint matters.
-
     const { data: allSlots } = await supabase
       .from('ad_slots')
       .select('*')
@@ -26,16 +17,30 @@ export async function GET() {
 
     const { data: activeOccs } = await supabase
       .from('occupancies')
-      .select(`
-        id, slot_id, user_id, bid_amount, ad_text, ad_url, ad_emoji, ad_color, ad_image_path, expires_at, is_active, created_at, removed_by_admin,
-        users(id, telegram_id, username, first_name, photo_url)
-      `)
+      .select('id, slot_id, user_id, bid_amount, ad_text, ad_url, ad_emoji, ad_color, ad_image_path, expires_at, is_active, created_at, removed_by_admin')
       .eq('is_active', true);
+
+    // Fetch users separately to avoid the nested join silently dropping
+    // occupancy rows when the joined users select hits an RLS boundary.
+    const userIds = [...new Set((activeOccs ?? []).map((o: any) => o.user_id).filter(Boolean))];
+    const usersById: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const { data: userRows } = await supabase
+        .from('users')
+        .select('id, telegram_id, username, first_name, photo_url')
+        .in('id', userIds);
+      for (const u of userRows ?? []) {
+        usersById[u.id] = u;
+      }
+    }
 
     const occBySlot: Record<string, any> = {};
     if (activeOccs) {
       for (const occ of activeOccs as any[]) {
-        occBySlot[occ.slot_id] = occ;
+        occBySlot[occ.slot_id] = {
+          ...occ,
+          users: usersById[occ.user_id] ?? null,
+        };
       }
     }
 
