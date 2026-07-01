@@ -52,7 +52,6 @@ export function WalletTab() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Balance card */}
       <div className="m-3 rounded-2xl overflow-hidden" style={{
         background: 'linear-gradient(135deg, #1A1A10, #2A2000)',
         border: '1px solid rgba(255,215,0,0.2)',
@@ -66,17 +65,21 @@ export function WalletTab() {
           <p className="text-xs text-brand-muted mt-1">GRAM is TON. Your influence currency.</p>
 
           {bonusBalance > 0.0001 && (
-            <div className="mt-3 pt-3 border-t border-brand-gold/10 flex items-center justify-between text-xs">
-              <span className="text-brand-muted">
-                <span className="text-green-400 font-mono font-bold">{withdrawableBalance.toFixed(4)}</span> withdrawable
-                {' · '}
-                <span className="text-yellow-400 font-mono font-bold">{bonusBalance.toFixed(4)}</span> bonus (spend-only)
-              </span>
+            <div className="mt-3 pt-3 border-t border-brand-gold/10 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-brand-muted">
+                  <span className="text-green-400 font-mono font-bold">{withdrawableBalance.toFixed(4)}</span> withdrawable
+                  {' · '}
+                  <span className="text-yellow-400 font-mono font-bold">{bonusBalance.toFixed(4)}</span> bonus (spend-only)
+                </span>
+              </div>
+              <p className="text-[10px] text-yellow-200/60 leading-relaxed">
+                ⚠️ 보너스 7 GRAM은 입찰에는 사용할 수 있지만 출금은 불가합니다. 실제 TON 입금액과 경매 수익만 출금 가능합니다.
+              </p>
             </div>
           )}
         </div>
 
-        {/* Stats row */}
         <div className="grid grid-cols-3 divide-x divide-brand-gold/10 border-t border-brand-gold/10">
           {[
             { label: 'Earned',  value: `${formatGramsShort(earned)} GRAM`,  color: 'text-green-400' },
@@ -91,7 +94,6 @@ export function WalletTab() {
         </div>
       </div>
 
-      {/* Deposit / Withdraw actions */}
       <div className="mx-3 mb-3 grid grid-cols-2 gap-2">
         <button
           onClick={() => setShowDeposit(true)}
@@ -114,7 +116,6 @@ export function WalletTab() {
         </p>
       </div>
 
-      {/* Transaction history */}
       <div className="px-3 pb-3">
         <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">
           Transaction History
