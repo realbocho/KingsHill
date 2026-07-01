@@ -49,10 +49,26 @@ export const GET = withApiHandler('cron-process-withdrawals', async (req: NextRe
   const totalRequested = pending.reduce((sum: number, w: any) => sum + Number(w.amount_ton), 0);
   if (masterBalance < totalRequested + 1) { // keep a 1 TON safety buffer for network fees
     logger.error('withdrawal_insufficient_float', { masterBalance, totalRequested });
+
+    // Fail and refund all pending withdrawals — leaving them as
+    // 'pending' indefinitely is worse than failing them cleanly,
+    // since the user's balance is already debited and they have no
+    // way to recover it until the withdrawal resolves one way or another.
+    for (const wd of pending) {
+      await supabase.rpc('fail_withdrawal', {
+        p_withdrawal_id: wd.id,
+        p_reason: `Master wallet balance insufficient (${masterBalance.toFixed(4)} TON available, ${totalRequested.toFixed(4)} TON requested). Please top up the master wallet and try again.`,
+      });
+      notifyWithdrawalProcessed(wd.user_id, Number(wd.amount_ton), null, 'failed').catch((e: any) =>
+        logger.error('notify_withdrawal_failed', { error: String(e) })
+      );
+    }
+
     return NextResponse.json({
-      error: 'Master wallet balance too low to process withdrawals safely',
+      error: 'Master wallet balance too low — all pending withdrawals have been refunded',
       masterBalance,
       totalRequested,
+      refunded: pending.length,
     }, { status: 503 });
   }
 
