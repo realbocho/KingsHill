@@ -70,11 +70,11 @@ export function WithdrawModal({ onClose }: Props) {
             <>
               {bonusBalance > 0.0001 && (
                 <div className="rounded-xl border border-yellow-900/40 bg-yellow-950/20 p-3 mb-4">
-                  <p className="text-xs font-bold text-yellow-300 mb-1">ℹ️ Some of your balance is bonus credit</p>
+                  <p className="text-xs font-bold text-yellow-300 mb-1">ℹ️ 보너스 잔액 안내</p>
                   <p className="text-[11px] text-yellow-200/80 leading-relaxed">
-                    {bonusBalance.toFixed(4)} GRAM of your {totalBalance.toFixed(4)} GRAM total is promotional
-                    bonus credit (e.g. the signup bonus) — it can be used to bid, but isn't backed by real TON
-                    and can't be withdrawn. Only GRAM from deposits or auction profits is withdrawable.
+                    총 잔액 {totalBalance.toFixed(4)} GRAM 중 <span className="font-bold text-yellow-300">{bonusBalance.toFixed(4)} GRAM은 웰컴 보너스</span>로,
+                    입찰에는 사용할 수 있지만 출금은 불가합니다. 경매에서 수익을 내더라도 보너스 7 GRAM은 항상 출금 불가 상태로 유지됩니다.
+                    실제 TON 입금액과 그 위의 수익만 출금 가능합니다.
                   </p>
                 </div>
               )}
