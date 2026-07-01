@@ -366,7 +366,9 @@ export function BidModal({ slot, onClose }: Props) {
           </button>
 
           <p className="text-[10px] text-center text-brand-muted mt-2">
-            20% platform fee on premium earned when you're displaced
+            {occ
+              ? "20% platform fee on premium earned when you're displaced"
+              : `5% platform fee on new occupancy · 20% fee on premium if displaced`}
           </p>
         </div>
       </div>
