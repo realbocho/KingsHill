@@ -74,7 +74,7 @@ export function WalletTab() {
                 </span>
               </div>
               <p className="text-[10px] text-yellow-200/60 leading-relaxed">
-                ⚠️ 보너스 7 GRAM은 입찰에는 사용할 수 있지만 출금은 불가합니다. 실제 TON 입금액과 경매 수익만 출금 가능합니다.
+                ⚠️ The 7 GRAM bonus can be used for bidding but cannot be withdrawn. Only real TON deposits and auction profits are withdrawable.
               </p>
             </div>
           )}
