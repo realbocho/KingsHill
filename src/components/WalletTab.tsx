@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/store';
 import { formatGramsShort } from '@/lib/telegram';
 import { DepositModal } from '@/components/DepositModal';
@@ -32,8 +32,13 @@ const TX_COLORS: Record<string, string> = {
 };
 
 export function WalletTab() {
-  const { state } = useApp();
+  const { state, refreshWallet } = useApp();
   const { user, walletTxs } = state;
+
+  useEffect(() => {
+    refreshWallet();
+  }, [refreshWallet]);
+
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
@@ -76,7 +81,7 @@ export function WalletTab() {
           {[
             { label: 'Earned',  value: `${formatGramsShort(earned)} GRAM`,  color: 'text-green-400' },
             { label: 'Spent',   value: `${formatGramsShort(spent)} GRAM`,   color: 'text-red-400' },
-            { label: 'ROI',     value: `${roi}%`,                       color: 'text-brand-gold' },
+            { label: 'ROI',     value: `${roi}%`,                           color: 'text-brand-gold' },
           ].map(({ label, value, color }) => (
             <div key={label} className="py-3 text-center">
               <p className="text-[10px] text-brand-muted uppercase">{label}</p>
