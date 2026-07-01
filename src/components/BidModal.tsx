@@ -38,7 +38,7 @@ export function BidModal({ slot, onClose }: Props) {
   const occ = slot.current_occupancy;
   const minBid = slot.min_bid;
   const amount = parseFloat(bidAmount) || 0;
-  const isValid = amount >= minBid && adText.trim().length > 0 && agreed && !uploading;
+  const isValid = amount >= minBid && adText.trim().length > 0 && agreed;
   const isOwner = occ?.user_id === state.user?.id;
 
   useEffect(() => {
@@ -171,13 +171,11 @@ export function BidModal({ slot, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="w-full bg-brand-card rounded-t-2xl border-t border-brand-border max-h-[90vh] overflow-y-auto">
-        {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-brand-border rounded-full" />
         </div>
 
         <div className="px-4 pb-6">
-          {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div>
               <h2 className="font-bold text-lg text-brand-text">{slot.name}</h2>
@@ -188,7 +186,6 @@ export function BidModal({ slot, onClose }: Props) {
             <button onClick={onClose} className="text-brand-muted text-xl p-1">×</button>
           </div>
 
-          {/* Current state */}
           {occ ? (
             <div className="rounded-xl border border-brand-border bg-brand-surface p-3 mb-4">
               <div className="flex items-center justify-between mb-1">
@@ -233,7 +230,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           )}
 
-          {/* Bid amount */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Your Bid (GRAM)
@@ -262,7 +258,6 @@ export function BidModal({ slot, onClose }: Props) {
                 Balance: <span className="text-brand-text font-mono">{formatGramsShort(state.user?.wallet ?? 0)} GRAM</span>
               </p>
             </div>
-            {/* Quick add buttons */}
             <div className="flex gap-2 mt-2">
               {['+0.01', '+0.1', '+1', '×2'].map(label => (
                 <button
@@ -280,7 +275,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           </div>
 
-          {/* Duration */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Occupancy Duration
@@ -303,7 +297,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           </div>
 
-          {/* Ad text */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Ad Message <span className="text-red-400">*</span>
@@ -319,7 +312,6 @@ export function BidModal({ slot, onClose }: Props) {
             <p className="text-xs text-brand-muted mt-1 text-right">{adText.length}/60</p>
           </div>
 
-          {/* Ad URL */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Link (optional)
@@ -333,7 +325,6 @@ export function BidModal({ slot, onClose }: Props) {
             />
           </div>
 
-          {/* Image upload */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Image (optional)
@@ -381,7 +372,6 @@ export function BidModal({ slot, onClose }: Props) {
             </p>
           </div>
 
-          {/* Emoji picker */}
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Icon
@@ -402,7 +392,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           </div>
 
-          {/* Color picker */}
           <div className="mb-6">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">
               Brand Color
@@ -422,7 +411,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           </div>
 
-          {/* Preview */}
           {adText && (
             <div className="mb-4 rounded-xl p-3 border" style={{ borderColor: `${adColor}44`, background: `${adColor}11` }}>
               <p className="text-xs text-brand-muted mb-1.5">Preview</p>
@@ -436,7 +424,6 @@ export function BidModal({ slot, onClose }: Props) {
             </div>
           )}
 
-          {/* Legal notice */}
           <div className="mb-3 rounded-xl border border-red-900/40 bg-red-950/20 p-3">
             <p className="text-xs font-bold text-red-300 mb-1">⚠️ Content Policy</p>
             <p className="text-[11px] text-red-200/80 leading-relaxed">
@@ -461,7 +448,6 @@ export function BidModal({ slot, onClose }: Props) {
             </span>
           </label>
 
-          {/* CTA */}
           <button
             onClick={handleBid}
             disabled={!isValid || loading || (state.user?.wallet ?? 0) < amount}
@@ -485,6 +471,8 @@ export function BidModal({ slot, onClose }: Props) {
               'Confirm Content Policy Above'
             ) : amount < minBid ? (
               `Minimum bid: ${minBid.toFixed(4)} GRAM`
+            ) : uploading ? (
+              '⏳ Image uploading — bid now (without image) or wait'
             ) : occ ? (
               `⚔️ Seize for ${amount.toFixed(4)} GRAM`
             ) : (
@@ -498,7 +486,6 @@ export function BidModal({ slot, onClose }: Props) {
         </div>
       </div>
 
-      {/* Report sub-modal */}
       {showReport && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center modal-backdrop p-4" onClick={(e) => e.target === e.currentTarget && setShowReport(false)}>
           <div className="w-full max-w-sm bg-brand-card rounded-2xl border border-brand-border p-4">
