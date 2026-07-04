@@ -33,15 +33,38 @@ function OwnedSlotRow({ slot }: { slot: SlotWithOccupancy }) {
 }
 
 export function ProfileTab() {
-  const { state } = useApp();
+  const { state, showToast } = useApp();
   const { user, slots } = state;
 
   const ownedSlots = slots.filter(s => s.current_occupancy?.user_id === user?.id);
   const initials   = `${user?.first_name?.[0] ?? '?'}${user?.last_name?.[0] ?? ''}`.toUpperCase();
 
+  const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME ?? 'KingsHillBot';
+  const referralLink = user ? `https://t.me/${botUsername}?start=ref_${user.telegram_id}` : '';
+
+  function copyReferralLink() {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink).then(() => {
+      showToast('Referral link copied!', 'success');
+    });
+  }
+
+  function shareReferralLink() {
+    if (!referralLink) return;
+    const text = encodeURIComponent('Join KingsHill — bid on ad slots, earn when outbid. Real TON profits! 🚀');
+    const url  = encodeURIComponent(referralLink);
+    const shareUrl = `https://t.me/share/url?url=${url}&text=${text}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Profile card */}
       <div className="m-3 rounded-2xl bg-brand-surface border border-brand-border p-4">
         <div className="flex items-center gap-4">
           {user?.photo_url ? (
@@ -65,12 +88,11 @@ export function ProfileTab() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mt-4">
           {[
             { label: 'Balance',  value: `${formatGramsShort(user?.wallet ?? 0)} GRAM`,       color: 'text-brand-gold' },
             { label: 'Earned',   value: `${formatGramsShort(user?.total_earned ?? 0)} GRAM`, color: 'text-green-400' },
-            { label: 'Active',   value: `${ownedSlots.length}`,                           color: 'text-blue-400' },
+            { label: 'Active',   value: `${ownedSlots.length}`,                              color: 'text-blue-400' },
           ].map(s => (
             <div key={s.label} className="bg-brand-card rounded-xl p-2.5 text-center">
               <p className="text-[10px] text-brand-muted uppercase">{s.label}</p>
@@ -80,7 +102,6 @@ export function ProfileTab() {
         </div>
       </div>
 
-      {/* Active slots */}
       <div className="px-3 pb-3">
         <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">
           Your Active Slots ({ownedSlots.length})
@@ -98,7 +119,51 @@ export function ProfileTab() {
         )}
       </div>
 
-      {/* Legal & content policy */}
+      {/* Referral section */}
+      <div className="mx-3 mb-3 rounded-2xl border border-brand-border bg-brand-surface overflow-hidden">
+        <div className="p-4 border-b border-brand-border">
+          <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-1">👥 Invite Friends</p>
+          <p className="text-xs text-brand-muted leading-relaxed">
+            Earn <span className="text-brand-gold font-bold">3 GRAM</span> when a friend you invite places their first bid.
+            Bonus is spend-only (not withdrawable).
+          </p>
+        </div>
+
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-brand-card rounded-xl p-3 text-center">
+              <p className="text-[10px] text-brand-muted uppercase">Friends Invited</p>
+              <p className="text-lg font-bold text-brand-gold">{(user as any)?.referral_count ?? 0}</p>
+            </div>
+            <div className="bg-brand-card rounded-xl p-3 text-center">
+              <p className="text-[10px] text-brand-muted uppercase">Bonus Earned</p>
+              <p className="text-lg font-bold text-green-400">
+                {formatGramsShort(((user as any)?.referral_count ?? 0) * 3)} GRAM
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-brand-card border border-brand-border px-3 py-2.5 flex items-center gap-2">
+            <p className="text-[10px] font-mono text-brand-muted flex-1 truncate">{referralLink}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={copyReferralLink}
+              className="py-3 rounded-xl text-xs font-bold bg-brand-surface border border-brand-border text-brand-text"
+            >
+              📋 Copy Link
+            </button>
+            <button
+              onClick={shareReferralLink}
+              className="py-3 rounded-xl text-xs font-bold bg-brand-gold text-brand-dark"
+            >
+              📢 Share
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-3 mb-3 rounded-xl border border-red-900/40 bg-red-950/20 p-4">
         <p className="text-xs font-bold text-red-300 uppercase tracking-wider mb-2">⚠️ Content Policy & Legal</p>
         <p className="text-xs text-red-200/80 leading-relaxed">
@@ -109,7 +174,6 @@ export function ProfileTab() {
         </p>
       </div>
 
-      {/* Currency note */}
       <div className="mx-3 mb-3 rounded-xl border border-brand-border bg-brand-surface p-3">
         <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-1">Currency</p>
         <p className="text-xs text-brand-muted">
@@ -118,14 +182,13 @@ export function ProfileTab() {
         </p>
       </div>
 
-      {/* How it works */}
       <div className="mx-3 mb-3 rounded-xl border border-brand-border bg-brand-surface p-4">
         <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-3">How It Works</p>
         {[
-          { emoji: '⚔️', title: 'Claim a Slot',   desc: 'Bid Grams to occupy any ad position on the board.' },
-          { emoji: '📢', title: 'Your Ad Goes Live', desc: 'Everyone in the app sees your message immediately.' },
+          { emoji: '⚔️', title: 'Claim a Slot',        desc: 'Bid Grams to occupy any ad position on the board.' },
+          { emoji: '📢', title: 'Your Ad Goes Live',    desc: 'Everyone in the app sees your message immediately.' },
           { emoji: '💰', title: 'Get Displaced = Profit', desc: 'When someone outbids you, you get your stake back plus 80% of their premium.' },
-          { emoji: '🔄', title: 'Slots Reset', desc: 'After your time expires with no new bid, the slot resets to base price.' },
+          { emoji: '🔄', title: 'Slots Reset',          desc: 'After your time expires with no new bid, the slot resets to base price.' },
         ].map(step => (
           <div key={step.title} className="flex gap-3 mb-3 last:mb-0">
             <span className="text-xl flex-shrink-0">{step.emoji}</span>
