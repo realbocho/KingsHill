@@ -15,6 +15,12 @@ export interface Database {
           withdrawable_balance: number;
           total_earned: number;
           total_spent:  number;
+          is_bot:       boolean;
+          referred_by:  string | null;
+          referral_count: number;
+          total_bonus_received: number;
+          first_bid_done: boolean;
+          first_deposit_done: boolean;
           created_at:   string;
           updated_at:   string;
         };
@@ -140,7 +146,6 @@ export interface Database {
   };
 }
 
-// Enriched types used in UI
 export type User = Database['public']['Tables']['users']['Row'];
 export type AdSlot = Database['public']['Tables']['ad_slots']['Row'];
 export type Occupancy = Database['public']['Tables']['occupancies']['Row'];
