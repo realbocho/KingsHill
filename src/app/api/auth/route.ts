@@ -15,6 +15,7 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
   const botToken = process.env.TELEGRAM_BOT_TOKEN ?? '';
 
   let tgUser: { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string } | undefined;
+  let startParam: string | null = null;
 
   if (process.env.NODE_ENV === 'development' && initData === 'dev') {
     tgUser = { id: 123456789, first_name: 'Dev', last_name: 'User', username: 'devuser' };
@@ -24,11 +25,9 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
       throw new ApiError('Invalid Telegram data', 401);
     }
     tgUser = tgData.user;
+    startParam = tgData.start_param ?? null;
   }
 
-  // Rate limit by telegram_id, not IP — Telegram Mini Apps often share
-  // network egress IPs (mobile carriers, corporate NAT), so IP-based
-  // limiting would punish unrelated users sharing a connection.
   const rl = await checkRateLimit({ key: `auth:${tgUser.id}`, ...RATE_LIMITS.auth });
   if (!rl.allowed) {
     logger.warn('auth_rate_limited', { telegramId: tgUser.id, count: rl.count });
@@ -89,6 +88,27 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
         balance_after: 7.0,
         description:   'Welcome bonus — 7 GRAM to get you started!',
       });
+
+      if (startParam?.startsWith('ref_')) {
+        const referrerTelegramId = parseInt(startParam.slice(4), 10);
+        if (!isNaN(referrerTelegramId) && referrerTelegramId !== tgUser.id) {
+          const { data: referrer } = await client
+            .from('users')
+            .select('id')
+            .eq('telegram_id', referrerTelegramId)
+            .eq('is_bot', false)
+            .single();
+
+          if (referrer) {
+            await client
+              .from('users')
+              .update({ referred_by: referrer.id })
+              .eq('id', newUser.id);
+
+            logger.info('referral_linked', { newUserId: newUser.id, referrerId: referrer.id });
+          }
+        }
+      }
     }
   }
 
