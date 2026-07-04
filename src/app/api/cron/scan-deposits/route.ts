@@ -10,17 +10,6 @@ import { notifyDepositCredited } from '@/lib/notify';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-/**
- * Intended trigger: cron-job.org, every 2-5 minutes, hitting
- *   GET https://your-app.vercel.app/api/cron/scan-deposits?secret=YOUR_CRON_SECRET
- *
- * For each incoming transaction to the master wallet:
- *   1. Skip if we've already recorded this tx_hash (idempotent).
- *   2. Try to match the transfer comment against a user's deposit_memo.
- *   3. If matched, credit_deposit() tops up their GRAM balance.
- *   4. If unmatched, the deposit is recorded as 'unmatched' so an
- *      admin can manually reconcile it (e.g. user forgot the memo).
- */
 export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest) => {
   requireCronSecret(req);
 
@@ -45,10 +34,7 @@ export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest)
       .eq('tx_hash', tx.hash)
       .maybeSingle();
 
-    if (existing) {
-      skipped++;
-      continue;
-    }
+    if (existing) { skipped++; continue; }
 
     const amountTon = Number(tx.amountNanoTon) / 1e9;
 
@@ -78,7 +64,12 @@ export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest)
       .single();
 
     if (insertError) {
-      logger.error('deposit_insert_failed', { hash: tx.hash, error: insertError.message });
+      if (insertError.code === '23505') {
+        logger.debug('deposit_already_recorded', { hash: tx.hash });
+        skipped++;
+      } else {
+        logger.error('deposit_insert_failed', { hash: tx.hash, error: insertError.message });
+      }
       continue;
     }
 
@@ -94,6 +85,43 @@ export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest)
 
       credited++;
       logger.info('deposit_credited', { userId: matchedUserId, amountTon, txHash: tx.hash });
+
+      // Referral bonus on first deposit: 10% of deposit (spend-only) to referrer
+      const { data: depositor } = await supabase
+        .from('users')
+        .select('referred_by, first_deposit_done')
+        .eq('id', matchedUserId)
+        .single();
+
+      if (depositor && !depositor.first_deposit_done && depositor.referred_by) {
+        await supabase.from('users').update({ first_deposit_done: true }).eq('id', matchedUserId);
+
+        const referralBonus = Math.round(amountTon * 0.1 * 10000) / 10000;
+
+        const { data: referrer } = await supabase
+          .from('users')
+          .select('wallet, total_bonus_received')
+          .eq('id', depositor.referred_by)
+          .eq('is_bot', false)
+          .single();
+
+        if (referrer) {
+          await supabase.from('users').update({
+            wallet:               referrer.wallet + referralBonus,
+            total_bonus_received: referrer.total_bonus_received + referralBonus,
+          }).eq('id', depositor.referred_by);
+
+          await supabase.from('wallet_transactions').insert({
+            user_id:       depositor.referred_by,
+            type:          'reward',
+            amount:        referralBonus,
+            balance_after: referrer.wallet + referralBonus,
+            description:   `Referral bonus — friend deposited ${amountTon} TON`,
+          });
+
+          logger.info('referral_deposit_bonus', { referrerId: depositor.referred_by, bonus: referralBonus });
+        }
+      }
 
       notifyDepositCredited(matchedUserId, amountTon).catch(err =>
         logger.error('notify_deposit_failed', { error: String(err) })
