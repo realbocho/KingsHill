@@ -74,8 +74,8 @@ export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) 
     const occ = occBySlot[slot.id];
 
     if (!occ) {
-      // Empty slot — 5% chance bot fills it (lowered from 20%)
-      if (Math.random() > 0.05) continue;
+      // Empty slot — 30% chance bot fills it
+      if (Math.random() > 0.30) continue;
 
       const bot = rand(bots) as any;
       const bidAmount = randBetween(slot.base_price, slot.base_price * 1.3);
@@ -94,11 +94,16 @@ export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) 
       }
 
     } else if (!realUserIds.has(occ.user_id)) {
-      // Bot-occupied slot — 3% chance another bot displaces (lowered from 15%)
-      if (Math.random() > 0.03) continue;
+      // Bot-occupied slot — 10% chance another bot displaces
+      if (Math.random() > 0.10) continue;
 
       const minBid = Number(occ.bid_amount) * (1 + slot.min_increment_pct / 100);
-      const bidAmount = randBetween(minBid, minBid * 1.2);
+
+      // Cap bot bids at 3x base_price to prevent runaway prices
+      const maxBotBid = slot.base_price * 3;
+      if (minBid > maxBotBid) continue;
+
+      const bidAmount = randBetween(minBid, Math.min(minBid * 1.1, maxBotBid));
       const otherBots = bots.filter((b: any) => b.id !== occ.user_id);
       if (otherBots.length === 0) continue;
 
