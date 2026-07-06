@@ -109,6 +109,9 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
           }
         }
       }
+
+      // Increment total_users counter
+      await client.rpc('increment_platform_users');
     }
   }
 
