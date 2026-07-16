@@ -26,6 +26,14 @@ function randBetween(min: number, max: number): number {
   return Math.round((Math.random() * (max - min) + min) * 100) / 100;
 }
 
+// Slots bots must never fill or displace — reserved for real users only.
+const BOT_EXCLUDED_SLOT_NAMES = new Set([
+  'Alpha Row A1',
+  'Alpha Row A2',
+  'Alpha Row A3',
+  'Corner West',
+]);
+
 export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) => {
   requireCronSecret(req);
 
@@ -71,6 +79,8 @@ export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) 
   let displaced = 0;
 
   for (const slot of slots ?? []) {
+    if (BOT_EXCLUDED_SLOT_NAMES.has(slot.name)) continue;
+
     const occ = occBySlot[slot.id];
 
     if (!occ) {
