@@ -70,6 +70,12 @@ export function BoardTab() {
         >
           ↻ Force Refresh
         </button>
+
+        {/* Footer tagline */}
+        <p className="w-full mt-4 mb-1 text-center text-[10px] text-brand-muted leading-relaxed px-4">
+          When someone outbids and displaces you, you don&apos;t just get your stake back —
+          you earn 80% of the premium they paid. Getting displaced is how you profit.
+        </p>
       </div>
 
       {/* Bid modal */}
