@@ -111,7 +111,10 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
       }
 
       // Increment total_users counter
-      await client.rpc('increment_platform_users');
+      const { error: incrementError } = await client.rpc('increment_platform_users');
+      if (incrementError) {
+        logger.error('increment_platform_users_failed', { message: incrementError.message });
+      }
     }
   }
 
