@@ -8,6 +8,7 @@ import { WalletTab } from '@/components/WalletTab';
 import { LeaderboardTab } from '@/components/LeaderboardTab';
 import { ProfileTab } from '@/components/ProfileTab';
 import { AdminPanel } from '@/components/AdminPanel';
+import { HowItWorksModal } from '@/components/HowItWorksModal';
 import clsx from 'clsx';
 
 const BASE_NAV_TABS = [
@@ -175,6 +176,7 @@ function AppInner() {
       </nav>
 
       <Toast />
+      <HowItWorksModal />
     </div>
   );
 }
