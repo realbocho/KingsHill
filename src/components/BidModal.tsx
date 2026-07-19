@@ -240,6 +240,11 @@ export function BidModal({ slot, onClose }: Props) {
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-brand-muted leading-snug mt-1.5">
+              When your time runs out un-challenged, your ad comes down and the slot resets to base
+              price. Your stake is the cost of the ad time — it is not refunded. If someone outbids
+              you before then, you get it back + 80% of their premium.
+            </p>
           </div>
 
           <div className="mb-4">
