@@ -21,9 +21,9 @@ const STEPS = [
     body: 'Displaced? You get your original stake back + 80% of the premium the challenger paid.',
   },
   {
-  icon: '🔄',
-  title: 'Expire',
-  body: 'When your time runs out un-challenged, your ad comes down and the slot resets to base price. Your stake was the cost of the ad time — it is not refunded.',
+    icon: '🔄',
+    title: 'Expire',
+    body: 'When your time runs out un-challenged, your ad comes down and the slot resets to base price. Your stake was the cost of the ad time — it is not refunded.',
   },
 ];
 
