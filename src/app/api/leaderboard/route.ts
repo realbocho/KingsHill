@@ -13,7 +13,7 @@ const TREASURY_TELEGRAM_ID = -1;
 export async function GET() {
   const supabase = createServiceClient();
 
-  const [{ data: topEarners }, { data: topSpenders }, { data: stats }, { data: recentBids }] = await Promise.all([
+  const [{ data: topEarners }, { data: topSpenders }, { data: stats }, { data: recentBids }, { count: liveUserCount }] = await Promise.all([
     supabase
       .from('users')
       .select('id, telegram_id, username, first_name, photo_url, total_earned, wallet')
@@ -36,6 +36,15 @@ export async function GET() {
       `)
       .order('created_at', { ascending: false })
       .limit(20),
+    // Live user count straight from the users table (bots included,
+    // treasury excluded). platform_stats.total_users is a denormalized
+    // copy that has repeatedly drifted (missing RPC, seed inserts that
+    // bypass the auth route, no decrement on delete), so we no longer
+    // trust it for display.
+    supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .neq('telegram_id', TREASURY_TELEGRAM_ID),
   ]);
 
   // bid_history can't easily filter the joined user's telegram_id in
@@ -46,5 +55,10 @@ export async function GET() {
     (b: any) => b.users?.telegram_id !== TREASURY_TELEGRAM_ID
   );
 
-  return NextResponse.json({ topEarners, topSpenders, stats, recentBids: filteredRecentBids });
+  const statsRow = stats as { total_users: number } | null;
+  const statsWithLiveCount = statsRow
+    ? { ...statsRow, total_users: liveUserCount ?? statsRow.total_users }
+    : statsRow;
+
+  return NextResponse.json({ topEarners, topSpenders, stats: statsWithLiveCount, recentBids: filteredRecentBids });
 }
