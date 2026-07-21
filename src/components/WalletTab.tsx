@@ -74,7 +74,7 @@ export function WalletTab() {
                 </span>
               </div>
               <p className="text-[10px] text-yellow-200/60 leading-relaxed">
-                ⚠️ The 7 GRAM bonus can be used for bidding but cannot be withdrawn. Only real TON deposits and auction profits are withdrawable.
+                ⚠️ The 7 GRAM bonus can be used for bidding but cannot be withdrawn. Real TON deposits are always withdrawable — auction profits are withdrawable only in proportion to how much of the winning bid against you was real TON, not bonus.
               </p>
             </div>
           )}
