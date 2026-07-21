@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'kingshill_how_it_works_seen_v1';
+const STORAGE_KEY = 'kingshill_how_it_works_seen_v2';
 
 const STEPS = [
   {
@@ -79,6 +79,12 @@ export function HowItWorksModal() {
               <span className="text-brand-gold font-bold">GRAM = TON.</span> It&apos;s just the in-app
               name for your TON balance — no conversion, no separate token. Deposit TON to top up,
               withdraw GRAM to get TON back, any time, from the Wallet tab.
+            </p>
+            <p className="text-xs text-brand-muted leading-snug">
+              <span className="text-brand-gold font-bold">Withdrawing profit:</span> your own stake
+              always comes back the way you paid it. But the 80% premium you earn when displaced is
+              only withdrawable in proportion to how much of the challenger&apos;s bid was real TON —
+              if they outbid you using bonus GRAM, that share of your profit is bonus too (spend-only).
             </p>
             <p className="text-xs text-brand-muted leading-snug">
               Every ad requires agreeing to the content policy before you bid. Illegal or
