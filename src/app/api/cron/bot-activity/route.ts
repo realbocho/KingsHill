@@ -56,7 +56,8 @@ export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) 
 
   const { data: slots } = await supabase
     .from('ad_slots')
-    .select('id, name, tier, base_price, min_increment_pct');
+    .select('id, name, tier, base_price, min_increment_pct')
+    .eq('is_retired', false);
 
   const { data: activeOccs } = await supabase
     .from('occupancies')
