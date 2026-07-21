@@ -72,7 +72,7 @@ export function WithdrawModal({ onClose }: Props) {
                 <div className="rounded-xl border border-yellow-900/40 bg-yellow-950/20 p-3 mb-4">
                   <p className="text-xs font-bold text-yellow-300 mb-1">ℹ️ Bonus Balance Notice</p>
                   <p className="text-[11px] text-yellow-200/80 leading-relaxed">
-                    Of your total {totalBalance.toFixed(4)} GRAM, {bonusBalance.toFixed(4)} GRAM is a welcome bonus — it can be used for bidding but cannot be withdrawn. Even if you earn profits through auctions, the 7 GRAM bonus always remains non-withdrawable. Only real TON deposits and profits earned on top of them are withdrawable.
+                    Of your total {totalBalance.toFixed(4)} GRAM, {bonusBalance.toFixed(4)} GRAM is a welcome bonus — it can be used for bidding but cannot be withdrawn. Real TON deposits are always withdrawable. Auction profits are withdrawable only in proportion to how much of the bid that displaced you was real TON — if it was paid with bonus GRAM, that share of your profit is bonus too.
                   </p>
                 </div>
               )}
