@@ -13,6 +13,7 @@ export async function GET() {
     const { data: allSlots } = await supabase
       .from('ad_slots')
       .select('*')
+      .eq('is_retired', false)
       .order('position');
 
     const { data: activeOccs } = await supabase
