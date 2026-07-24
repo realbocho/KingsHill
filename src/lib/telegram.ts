@@ -83,6 +83,9 @@ export function timeAgo(date: string): string {
 
 export function timeLeft(expires: string): string {
   const ms = new Date(expires).getTime() - Date.now();
+  // An unparseable timestamp used to fall through every branch below and
+  // render the literal string "NaNs" on the card.
+  if (!Number.isFinite(ms)) return '—';
   if (ms <= 0) return 'Expired';
   const hours = Math.floor(ms / 3600000);
   const mins = Math.floor((ms % 3600000) / 60000);

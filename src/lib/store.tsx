@@ -109,6 +109,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [state.user, refreshSlots]);
 
+  // Refresh exactly when the next ad expires.
+  //
+  // Realtime only fires on writes, and expiry is the absence of one —
+  // nothing touches the table when a deadline passes, so without this
+  // the board sat on a stale slot until the 90s fallback poll happened
+  // to come round. One timer aimed at the soonest deadline means a slot
+  // frees up on screen the second it actually frees up.
+  useEffect(() => {
+    if (!state.user) return;
+
+    const now = Date.now();
+    const nextExpiry = state.slots
+      .map(s => s.current_occupancy?.expires_at)
+      .filter((e): e is string => !!e)
+      .map(e => new Date(e).getTime())
+      .filter(t => Number.isFinite(t) && t > now)
+      .sort((a, b) => a - b)[0];
+
+    if (nextExpiry === undefined) return;
+
+    // +1s of slack so the server's own now() has definitely crossed the
+    // boundary too, otherwise we can refetch the row one tick too early.
+    const delay = Math.min(nextExpiry - now + 1000, 2 ** 31 - 1);
+    const timer = setTimeout(refreshSlots, delay);
+    return () => clearTimeout(timer);
+  }, [state.slots, state.user, refreshSlots]);
+
   return (
     <AppContext.Provider value={{ state, dispatch, refreshSlots, refreshWallet, showToast }}>
       {children}

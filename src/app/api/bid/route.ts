@@ -31,6 +31,19 @@ export const POST = withApiHandler('bid', async (req: NextRequest) => {
     tooManyRequests(rl.limit);
   }
 
+  // place_bid reads the current occupancy with `is_active = true` only —
+  // it has no expiry predicate. If the cleanup sweep hasn't run, a dead
+  // occupancy still counts as the incumbent, which means the bidder is
+  // quoted min_increment_pct above a bid whose time already ran out, and
+  // the expired holder collects a displacement refund + 80% premium they
+  // are no longer entitled to. Retiring this one slot first closes that.
+  const { error: expireError } = await supabase.rpc('expire_slot', { p_slot_id: slotId });
+  if (expireError) {
+    // Not fatal — worst case we fall back to the old behaviour — but it
+    // means migration 008 hasn't been applied, which is worth knowing.
+    logger.error('expire_slot_failed', { slotId, message: expireError.message });
+  }
+
   const { data, error } = await supabase.rpc('place_bid', {
     p_slot_id:        slotId,
     p_user_id:        userId,

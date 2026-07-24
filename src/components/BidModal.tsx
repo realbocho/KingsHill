@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import type { SlotWithOccupancy } from '@/types/database';
 import { useApp } from '@/lib/store';
-import { formatGramsShort, timeLeft, adImageUrl } from '@/lib/telegram';
+import { formatGramsShort, adImageUrl } from '@/lib/telegram';
+import { useCountdown } from '@/hooks/useCountdown';
 import clsx from 'clsx';
 
 const EMOJIS = ['🔥', '⚡', '🚀', '💎', '👑', '🌟', '💰', '🎯', '🏆', '✨', '🦁', '🎪', '🌈', '🎸', '🍀'];
@@ -24,7 +25,6 @@ export function BidModal({ slot, onClose }: Props) {
   const [adColor,   setAdColor]   = useState('#FFD700');
   const [duration,  setDuration]  = useState(1);
   const [loading,   setLoading]   = useState(false);
-  const [timeStr,   setTimeStr]   = useState('');
   const [agreed,    setAgreed]    = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -35,8 +35,16 @@ export function BidModal({ slot, onClose }: Props) {
   const [uploading,  setUploading]  = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const occ = slot.current_occupancy;
-  const minBid = slot.min_bid;
+  const occRaw = slot.current_occupancy;
+  const { label: timeStr, expired } = useCountdown(occRaw?.expires_at);
+
+  // If the incumbent's time runs out while this modal is open, the slot
+  // is free: stop showing them as the holder, and quote base_price
+  // instead of min_increment_pct above a bid that has already expired.
+  // /api/bid retires the expired row before pricing, so this matches
+  // what the server will actually charge.
+  const occ    = occRaw && !expired ? occRaw : null;
+  const minBid = occ ? slot.min_bid : slot.base_price;
   const amount = parseFloat(bidAmount) || 0;
   const isValid = amount >= minBid && adText.trim().length > 0 && agreed;
   const isOwner = occ?.user_id === state.user?.id;
@@ -46,14 +54,6 @@ export function BidModal({ slot, onClose }: Props) {
   useEffect(() => {
     setBidAmount(minBid.toFixed(4));
   }, [minBid]);
-
-  useEffect(() => {
-    if (!occ) return;
-    const u = () => setTimeStr(timeLeft(occ.expires_at));
-    u();
-    const i = setInterval(u, 1000);
-    return () => clearInterval(i);
-  }, [occ]);
 
   async function handleReport() {
     if (!occ || !reportReason.trim()) return;

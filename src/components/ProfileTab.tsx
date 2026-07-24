@@ -3,19 +3,10 @@
 import { useApp } from '@/lib/store';
 import { formatGramsShort } from '@/lib/telegram';
 import type { SlotWithOccupancy } from '@/types/database';
-import { timeLeft } from '@/lib/telegram';
-import { useState, useEffect } from 'react';
+import { useCountdown } from '@/hooks/useCountdown';
 
 function OwnedSlotRow({ slot }: { slot: SlotWithOccupancy }) {
-  const [tl, setTl] = useState('');
-  useEffect(() => {
-    if (!slot.current_occupancy) return;
-    const u = () => setTl(timeLeft(slot.current_occupancy!.expires_at));
-    u();
-    const i = setInterval(u, 1000);
-    return () => clearInterval(i);
-  }, [slot]);
-
+  const { label: tl } = useCountdown(slot.current_occupancy?.expires_at);
   const occ = slot.current_occupancy!;
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-surface border border-brand-border"

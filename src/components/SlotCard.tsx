@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import type { SlotWithOccupancy } from '@/types/database';
-import { formatGramsShort, timeLeft, adImageUrl } from '@/lib/telegram';
+import { formatGramsShort, adImageUrl } from '@/lib/telegram';
+import { useCountdown } from '@/hooks/useCountdown';
 import clsx from 'clsx';
 
 interface Props {
@@ -18,16 +18,15 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 export function SlotCard({ slot, onClick, isOwned }: Props) {
-  const occ = slot.current_occupancy;
-  const [timeStr, setTimeStr] = useState('');
+  const occRaw = slot.current_occupancy;
+  const { label: timeStr, expired } = useCountdown(occRaw?.expires_at);
 
-  useEffect(() => {
-    if (!occ) return;
-    const update = () => setTimeStr(timeLeft(occ.expires_at));
-    update();
-    const i = setInterval(update, 1000);
-    return () => clearInterval(i);
-  }, [occ]);
+  // Once the deadline passes, treat the slot as unclaimed immediately
+  // rather than keeping a dead ad on screen with "⏱ Expired" under it.
+  // The server already filters these out; this covers the gap between
+  // the deadline and the next successful refresh.
+  const occ   = occRaw && !expired ? occRaw : null;
+  const owned = isOwned && !expired;
 
   const bgColor = occ?.ad_color ?? '#2A2A3A';
   const isPrime = slot.tier === 'prime';
@@ -41,7 +40,7 @@ export function SlotCard({ slot, onClick, isOwned }: Props) {
         'slot-card rounded-xl border cursor-pointer relative overflow-hidden',
         heightClass, widthClass,
         occ ? 'border-brand-border' : 'border-brand-border/50 border-dashed',
-        isOwned && 'ring-1 ring-brand-gold/60',
+        owned && 'ring-1 ring-brand-gold/60',
         occ && isPrime && 'slot-occupied',
       )}
       style={occ ? {
@@ -58,7 +57,7 @@ export function SlotCard({ slot, onClick, isOwned }: Props) {
       </div>
 
       {/* Owned indicator */}
-      {isOwned && (
+      {owned && (
         <div className="absolute top-1.5 right-1.5 z-10">
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-gold/20 text-brand-gold border border-brand-gold/40">
             YOURS

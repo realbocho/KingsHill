@@ -59,10 +59,14 @@ export const GET = withApiHandler('cron-bot-activity', async (req: NextRequest) 
     .select('id, name, tier, base_price, min_increment_pct')
     .eq('is_retired', false);
 
+  // Same expiry predicate the board uses — otherwise a slot whose ad has
+  // expired but hasn't been swept looks occupied to the bots, so they
+  // never refill it and it sits dead until the cleanup cron runs.
   const { data: activeOccs } = await supabase
     .from('occupancies')
     .select('id, slot_id, user_id, bid_amount')
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .gt('expires_at', new Date().toISOString());
 
   const occBySlot: Record<string, any> = {};
   for (const occ of activeOccs ?? []) {

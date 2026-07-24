@@ -12,9 +12,12 @@ export const dynamic = 'force-dynamic';
  *   GET https://your-app.vercel.app/api/cron/cleanup?secret=YOUR_CRON_SECRET
  *
  * Housekeeping that keeps the app correct and the database lean:
- *   - expire_occupancies(): resets slots whose time ran out (this also
- *     runs on every /api/slots read, but the cron sweep guarantees it
- *     happens even if nobody has the app open)
+ *   - expire_occupancies(): resets slots whose time ran out. /api/slots
+ *     also runs this, but throttled to once a minute per warm instance
+ *     and only when someone has the app open — this sweep is what keeps
+ *     the board correct on an idle app. Note /api/slots additionally
+ *     filters expired rows at read time, so a failure here degrades
+ *     is_active accuracy, not what users see.
  *   - cleanup_rate_limits(): drops rate-limit window rows older than
  *     1 hour so that table doesn't grow unbounded
  *   - stale 'unmatched' deposits and stuck 'processing' withdrawals get
@@ -25,10 +28,24 @@ export const GET = withApiHandler('cron-cleanup', async (req: NextRequest) => {
 
   const supabase = createServiceClient() as any;
 
-  const [{ data: expiredCount }, { data: rateLimitCleaned }] = await Promise.all([
+  // These RPC errors used to be discarded, so a sweep that never ran —
+  // missing function, permissions, migrations not applied — still logged
+  // 'cron_cleanup_completed' and returned HTTP 200 with a null count.
+  // The cron dashboard showed green while nothing expired. Surface it.
+  const [expireRes, rateLimitRes] = await Promise.all([
     supabase.rpc('expire_occupancies'),
     supabase.rpc('cleanup_rate_limits'),
   ]);
+
+  if (expireRes.error) {
+    logger.error('expire_occupancies_failed', { message: expireRes.error.message });
+  }
+  if (rateLimitRes.error) {
+    logger.error('cleanup_rate_limits_failed', { message: rateLimitRes.error.message });
+  }
+
+  const expiredCount     = expireRes.data;
+  const rateLimitCleaned = rateLimitRes.data;
 
   const { data: staleUnmatched } = await supabase
     .from('ton_deposits')
@@ -61,10 +78,17 @@ export const GET = withApiHandler('cron-cleanup', async (req: NextRequest) => {
     stuckWithdrawals: stuckWithdrawals?.length ?? 0,
   });
 
-  return NextResponse.json({
-    expiredOccupancies: expiredCount,
-    rateLimitRowsCleaned: rateLimitCleaned,
-    staleUnmatchedDeposits: staleUnmatched?.length ?? 0,
-    stuckWithdrawals: stuckWithdrawals?.length ?? 0,
-  });
+  return NextResponse.json(
+    {
+      ok: !expireRes.error && !rateLimitRes.error,
+      expiredOccupancies: expiredCount,
+      expireError: expireRes.error?.message ?? null,
+      rateLimitRowsCleaned: rateLimitCleaned,
+      staleUnmatchedDeposits: staleUnmatched?.length ?? 0,
+      stuckWithdrawals: stuckWithdrawals?.length ?? 0,
+    },
+    // Non-2xx so cron-job.org's dashboard actually flags a broken sweep
+    // instead of showing a green run that did nothing.
+    { status: expireRes.error ? 500 : 200 }
+  );
 });
