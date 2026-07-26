@@ -111,3 +111,65 @@ export async function notifyDepositCredited(userId: string, amountTon: number) {
 
   await sendTelegramMessage(user.telegram_id, text);
 }
+
+/**
+ * Broadcast: a new ad just went live on a slot. Sends an engagement,
+ * profit-focused promo to every OTHER real user who has started the
+ * bot. Fire-and-forget and throttled to respect Telegram's bulk-send
+ * limits.
+ *
+ * The hook (its caller in /api/bid) does not await this, so a slow or
+ * failing broadcast never delays the bid response.
+ *
+ * NOTE: this messages users on every new ad. It drives engagement but
+ * can get spammy at scale — consider a per-user opt-out toggle or a
+ * per-slot cooldown before high volume. Bot/seed accounts are excluded
+ * so we never message the random real Telegram IDs they may hold.
+ */
+export async function notifyNewAd(
+  bidderId: string,
+  slotId: string,
+  bidAmount: number,
+  adText: string | null,
+  adEmoji: string | null,
+) {
+  const supabase = createServiceClient() as any;
+
+  const [{ data: slot }, { data: recipients }] = await Promise.all([
+    supabase.from('ad_slots').select('name, min_increment_pct').eq('id', slotId).single(),
+    supabase
+      .from('users')
+      .select('telegram_id')
+      .neq('id', bidderId)
+      .neq('is_bot', true)          // never message seeded/bot accounts
+      .order('updated_at', { ascending: false })
+      .limit(2000),                 // cap the blast radius per event
+  ]);
+
+  if (!recipients || recipients.length === 0) return;
+
+  const slotName = slot?.name ?? 'a prime slot';
+  const incPct   = Number(slot?.min_increment_pct ?? 10);
+  const nextBid  = bidAmount * (1 + incPct / 100);
+  const preview  = adText ? `${adEmoji ?? '🔥'} ${adText.slice(0, 40)}` : 'a new campaign';
+
+  const text =
+    `🔔 <b>New ad just claimed ${slotName}!</b>\n\n` +
+    `${preview}\n\n` +
+    `💥 <b>Seize it and get paid.</b> Take the spot for as little as <b>${nextBid.toFixed(4)} GRAM</b>.\n` +
+    `💧 Every second you hold it earns <b>real TON</b> — up to <b>1 TON / 24h</b>, withdrawable instantly, no strings.\n` +
+    `💰 And if someone later outbids YOU, you pocket your stake back <b>+ 80% of their premium</b>.\n\n` +
+    `👑 Tap in and take the hill before someone else does.`;
+
+  // Throttle: Telegram allows roughly 30 messages/second in bulk.
+  const BATCH = 25;
+  for (let i = 0; i < recipients.length; i += BATCH) {
+    const chunk = recipients.slice(i, i + BATCH);
+    await Promise.all(chunk.map((r: any) => sendTelegramMessage(r.telegram_id, text)));
+    if (i + BATCH < recipients.length) {
+      await new Promise(res => setTimeout(res, 1100));
+    }
+  }
+
+  logger.info('new_ad_broadcast', { slotId, recipients: recipients.length });
+}
