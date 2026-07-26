@@ -54,6 +54,9 @@ export interface Database {
           expires_at:  string;
           is_active:   boolean;
           created_at:  string;
+          yield_claimed: number;
+          yield_settled: boolean;
+          ended_at:      string | null;
           removed_by_admin: boolean;
           removal_reason:   string | null;
           removed_at:       string | null;

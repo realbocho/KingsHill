@@ -12,7 +12,9 @@ export const POST = withApiHandler('bid', async (req: NextRequest) => {
   const userId       = requireUuid(body.userId, 'userId');
   const slotId        = requireUuid(body.slotId, 'slotId');
   const amount         = requireValidAmount(body.bidAmount, 'bidAmount');
-  const durationHours   = Math.min(Math.max(parseInt(body.durationHours ?? '1', 10) || 1, 1), 168);
+  // Capped at 24h: that's the yield window (1 TON max per occupancy), and
+  // holding longer earns no extra dividend, so we don't offer longer holds.
+  const durationHours   = Math.min(Math.max(parseInt(body.durationHours ?? '1', 10) || 1, 1), 24);
   const adText           = typeof body.adText === 'string' ? body.adText.slice(0, 60) : null;
   requireField(adText, 'adText');
   const adUrl             = typeof body.adUrl === 'string' ? body.adUrl.slice(0, 300) : null;

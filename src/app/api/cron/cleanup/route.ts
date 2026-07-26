@@ -44,6 +44,18 @@ export const GET = withApiHandler('cron-cleanup', async (req: NextRequest) => {
     logger.error('cleanup_rate_limits_failed', { message: rateLimitRes.error.message });
   }
 
+  // Settle final yield for occupancies that have ended (expired above or
+  // displaced) but were never claimed — so a user who closed the app still
+  // gets paid the time-based dividend they earned. Runs AFTER the expiry
+  // sweep so freshly-expired rows are picked up in the same run. Additive:
+  // a missing function (migration 009 not applied) is logged, not fatal.
+  const settleRes = await supabase.rpc('settle_ended_yield');
+  if (settleRes.error) {
+    logger.error('settle_ended_yield_failed', { message: settleRes.error.message });
+  } else if (settleRes.data) {
+    logger.info('yield_settled', { count: settleRes.data });
+  }
+
   const expiredCount     = expireRes.data;
   const rateLimitCleaned = rateLimitRes.data;
 
@@ -73,6 +85,7 @@ export const GET = withApiHandler('cron-cleanup', async (req: NextRequest) => {
 
   logger.info('cron_cleanup_completed', {
     expiredOccupancies: expiredCount,
+    yieldSettled: settleRes.data ?? 0,
     rateLimitRowsCleaned: rateLimitCleaned,
     staleUnmatchedDeposits: staleUnmatched?.length ?? 0,
     stuckWithdrawals: stuckWithdrawals?.length ?? 0,
@@ -82,6 +95,7 @@ export const GET = withApiHandler('cron-cleanup', async (req: NextRequest) => {
     {
       ok: !expireRes.error && !rateLimitRes.error,
       expiredOccupancies: expiredCount,
+      yieldSettled: settleRes.data ?? 0,
       expireError: expireRes.error?.message ?? null,
       rateLimitRowsCleaned: rateLimitCleaned,
       staleUnmatchedDeposits: staleUnmatched?.length ?? 0,

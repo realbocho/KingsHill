@@ -9,7 +9,9 @@ import clsx from 'clsx';
 
 const EMOJIS = ['🔥', '⚡', '🚀', '💎', '👑', '🌟', '💰', '🎯', '🏆', '✨', '🦁', '🎪', '🌈', '🎸', '🍀'];
 const COLORS  = ['#FFD700', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#10B981', '#EC4899', '#F97316'];
-const DURATIONS = [1, 6, 12, 24, 48, 72];
+const DURATIONS = [1, 6, 12, 24];
+const YIELD_MAX_TON = 1;      // TON paid for a full-window hold
+const YIELD_WINDOW_H = 24;    // hours to reach YIELD_MAX_TON
 
 interface Props {
   slot:    SlotWithOccupancy;
@@ -231,7 +233,7 @@ export function BidModal({ slot, onClose }: Props) {
 
           <div className="mb-4">
             <label className="text-xs font-bold text-brand-muted uppercase tracking-wider block mb-1.5">Occupancy Duration</label>
-            <div className="grid grid-cols-6 gap-1.5">
+            <div className="grid grid-cols-4 gap-1.5">
               {DURATIONS.map(h => (
                 <button key={h} onClick={() => setDuration(h)}
                   className={clsx('py-2 rounded-lg text-xs font-bold transition-all',
@@ -240,11 +242,28 @@ export function BidModal({ slot, onClose }: Props) {
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-brand-muted leading-snug mt-1.5">
+
+            {/* Yield estimate — real, withdrawable TON for time held */}
+            <div className="mt-2 rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-emerald-300">💧 Slot Yield (dividend)</p>
+                <p className="text-sm font-bold font-mono text-emerald-300">
+                  ≈ {(YIELD_MAX_TON * Math.min(duration, YIELD_WINDOW_H) / YIELD_WINDOW_H).toFixed(4)} TON
+                </p>
+              </div>
+              <p className="text-[11px] text-emerald-200/80 leading-relaxed mt-1">
+                Hold this slot and earn TON by the second — up to <span className="font-bold">{YIELD_MAX_TON} TON</span> for a
+                full {YIELD_WINDOW_H}h hold. This is <span className="font-bold">real TON, not bonus</span>: it lands in your
+                withdrawable balance and can be cashed out immediately — no strings attached. Claim it anytime in the Wallet tab.
+              </p>
+            </div>
+
+            <p className="text-[10px] text-brand-muted leading-snug mt-2">
               When your time runs out un-challenged, your ad comes down and the slot resets to base
               price. Your stake is the cost of the ad time — it is not refunded. If someone outbids
               you before then, you get your stake back + 80% of their premium — but that premium
-              share is withdrawable only if they paid with real TON, not bonus GRAM.
+              share is withdrawable only if they paid with real TON, not bonus GRAM. Yield you've
+              already earned is yours to keep either way.
             </p>
           </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApp } from '@/lib/store';
 import { formatGramsShort } from '@/lib/telegram';
 import { DepositModal } from '@/components/DepositModal';
@@ -21,6 +21,7 @@ const TX_ICONS: Record<string, string> = {
   reward: '🏆',
   topup:  '🎁',
   fee:    '📊',
+  yield:  '💧',
 };
 
 const TX_COLORS: Record<string, string> = {
@@ -29,18 +30,75 @@ const TX_COLORS: Record<string, string> = {
   reward: 'text-brand-gold',
   topup:  'text-blue-400',
   fee:    'text-brand-muted',
+  yield:  'text-emerald-400',
 };
 
 export function WalletTab() {
-  const { state, refreshWallet } = useApp();
+  const { state, dispatch, refreshWallet, showToast } = useApp();
   const { user, walletTxs } = state;
-
-  useEffect(() => {
-    refreshWallet();
-  }, [refreshWallet]);
 
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [claimable, setClaimable] = useState(0);
+  const [claiming, setClaiming] = useState(false);
+
+  const fetchClaimable = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res  = await fetch(`/api/yield?userId=${user.id}`);
+      const data = await res.json();
+      setClaimable(typeof data.claimable === 'number' ? data.claimable : 0);
+    } catch {}
+  }, [user]);
+
+  useEffect(() => {
+    refreshWallet();
+    fetchClaimable();
+  }, [refreshWallet, fetchClaimable]);
+
+  // Yield accrues by the second — refresh the claimable figure on a light
+  // cadence so the number visibly ticks up while the wallet screen is open.
+  useEffect(() => {
+    if (!user) return;
+    const id = setInterval(fetchClaimable, 15000);
+    return () => clearInterval(id);
+  }, [user, fetchClaimable]);
+
+  async function handleClaim() {
+    if (!user || claiming || claimable <= 0) return;
+    setClaiming(true);
+    try {
+      const res  = await fetch('/api/yield/claim', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast(data.error ?? 'Claim failed', 'error');
+      } else {
+        showToast(
+          data.claimed > 0
+            ? `Claimed ${data.claimed.toFixed(4)} TON — now withdrawable!`
+            : 'No yield to claim yet',
+          data.claimed > 0 ? 'success' : 'info',
+        );
+        if (data.user) {
+          dispatch({
+            type: 'UPDATE_USER_WALLET',
+            wallet: data.user.wallet,
+            withdrawable_balance: data.user.withdrawable_balance,
+            total_earned: data.user.total_earned,
+            total_spent: data.user.total_spent,
+          });
+        }
+        setClaimable(0);
+        await Promise.all([refreshWallet(), fetchClaimable()]);
+      }
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   const earned = user?.total_earned ?? 0;
   const spent  = user?.total_spent  ?? 0;
@@ -91,6 +149,45 @@ export function WalletTab() {
               <p className={clsx('text-sm font-bold font-mono', color)}>{value}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Slot yield / dividend — real, immediately-withdrawable TON */}
+      <div className="mx-3 mb-3 rounded-2xl overflow-hidden" style={{
+        background: 'linear-gradient(135deg, #0A1A12, #06120C)',
+        border: '1px solid rgba(16,185,129,0.28)',
+      }}>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-emerald-300/80 uppercase tracking-widest">💧 Slot Yield</p>
+            <span className="text-[10px] text-emerald-300/70 font-mono">1 TON / 24h max</span>
+          </div>
+          <div className="flex items-end gap-2">
+            <span className="text-3xl font-bold text-emerald-300 font-mono">{claimable.toFixed(4)}</span>
+            <span className="text-emerald-400/60 text-base mb-0.5 font-mono">TON</span>
+            <span className="text-[10px] text-emerald-300/60 mb-1.5 ml-1">claimable now</span>
+          </div>
+          <p className="text-[11px] text-emerald-200/70 leading-relaxed mt-1.5">
+            Earn TON by the second for every slot you hold. This is <span className="font-bold text-emerald-200">real TON,
+            not a bonus</span> — once claimed it goes straight to your withdrawable balance and can be
+            cashed out <span className="font-bold text-emerald-200">immediately, no strings attached</span>.
+          </p>
+          <button
+            onClick={handleClaim}
+            disabled={claiming || claimable <= 0.00005}
+            className={clsx(
+              'mt-3 w-full py-3 rounded-xl font-bold text-sm transition-all',
+              claimable > 0.00005 && !claiming
+                ? 'bg-emerald-500 text-emerald-950 active:scale-[0.98]'
+                : 'bg-brand-surface text-brand-muted cursor-not-allowed',
+            )}
+          >
+            {claiming
+              ? 'Claiming…'
+              : claimable > 0.00005
+                ? `Claim ${claimable.toFixed(4)} TON`
+                : 'Hold a slot to start earning'}
+          </button>
         </div>
       </div>
 
