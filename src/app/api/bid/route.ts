@@ -4,7 +4,7 @@ import { createServiceClient } from '@/lib/supabase';
 import { withApiHandler, requireField, requireValidAmount, requireUuid, tooManyRequests, ApiError } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import { notifyDisplaced } from '@/lib/notify';
+import { notifyDisplaced, notifyNewAd } from '@/lib/notify';
 
 export const POST = withApiHandler('bid', async (req: NextRequest) => {
   const body = await req.json();
@@ -76,6 +76,13 @@ export const POST = withApiHandler('bid', async (req: NextRequest) => {
       logger.error('notify_displaced_failed', { error: String(err) })
     );
   }
+
+  // A new ad is now live on this slot — push a profit-focused promo to
+  // everyone else so they come challenge for it. Fire-and-forget: never
+  // block or fail the bid because a broadcast hiccuped.
+  notifyNewAd(userId, slotId, amount, adText, adEmoji).catch(err =>
+    logger.error('notify_new_ad_failed', { error: String(err) })
+  );
 
   const { data: user } = await supabase
     .from('users')
