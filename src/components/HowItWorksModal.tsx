@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'kingshill_how_it_works_seen_v2';
+const STORAGE_KEY = 'kingshill_how_it_works_seen_v3';
 
 const STEPS = [
   {
     icon: '🏰',
     title: 'Occupy',
-    body: 'Pay GRAM to claim an ad slot for a chosen duration.',
+    body: 'Pay GRAM to claim an ad slot for a chosen duration (up to 24h).',
+  },
+  {
+    icon: '💧',
+    title: 'Earn Yield',
+    body: 'While you hold a slot you earn real TON by the second — up to 1 TON for a full 24h hold. It is not a bonus: claim it in the Wallet tab and withdraw immediately.',
   },
   {
     icon: '⚔️',
@@ -73,6 +78,16 @@ export function HowItWorksModal() {
               </div>
             </div>
           ))}
+
+          <div className="mt-2 rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-3">
+            <p className="text-xs font-bold text-emerald-300 mb-1">💧 Slot yield is real TON</p>
+            <p className="text-[11px] text-emerald-200/80 leading-relaxed">
+              Just holding a slot pays you TON by the second — up to <span className="font-bold">1 TON</span> for
+              a full 24h hold. Unlike welcome/referral bonuses, this is <span className="font-bold">real TON, not a bonus</span>:
+              once claimed it goes straight to your withdrawable balance and can be cashed out
+              <span className="font-bold"> immediately, no strings attached</span>.
+            </p>
+          </div>
 
           <div className="mt-2 pt-3 border-t border-brand-border space-y-2">
             <p className="text-xs text-brand-muted leading-snug">
