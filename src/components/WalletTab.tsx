@@ -41,7 +41,7 @@ const TX_COLORS: Record<string, string> = {
 // delete later. Timezone here is KST (+09:00); change the string to
 // your actual go-live time.  Example: '2026-07-30T09:00:00+09:00'
 // ────────────────────────────────────────────────────────────────
-const WITHDRAWALS_LIVE_AT = new Date('2026-07-29T09:00:00+09:00');
+const WITHDRAWALS_LIVE_AT = new Date('2026-07-30T09:00:00+09:00');
 
 export function WalletTab() {
   const { state, dispatch, refreshWallet, showToast } = useApp();
@@ -120,7 +120,7 @@ export function WalletTab() {
 
   // Temporary pre-launch notice: true until the master wallet is funded.
   const withdrawalsPending = Date.now() < WITHDRAWALS_LIVE_AT.getTime();
-  const goLiveLabel = WITHDRAWALS_LIVE_AT.toLocaleString(undefined, {
+  const goLiveLabel = WITHDRAWALS_LIVE_AT.toLocaleString('en-US', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 
