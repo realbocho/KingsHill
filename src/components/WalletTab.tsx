@@ -41,7 +41,7 @@ const TX_COLORS: Record<string, string> = {
 // delete later. Timezone here is KST (+09:00); change the string to
 // your actual go-live time.  Example: '2026-07-30T09:00:00+09:00'
 // ────────────────────────────────────────────────────────────────
-const WITHDRAWALS_LIVE_AT = new Date('2026-07-30T09:00:00+09:00');
+const WITHDRAWALS_LIVE_AT = new Date('2026-07-29T09:00:00+09:00');
 
 export function WalletTab() {
   const { state, dispatch, refreshWallet, showToast } = useApp();
