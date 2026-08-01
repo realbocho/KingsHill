@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '@/lib/store';
 import { formatGramsShort } from '@/lib/telegram';
 import { DepositModal } from '@/components/DepositModal';
@@ -42,11 +42,20 @@ export function WalletTab() {
   const [claimable, setClaimable] = useState(0);
   const [claiming, setClaiming] = useState(false);
 
+  // Guards against an out-of-order response: if two fetchClaimable() calls
+  // are in flight (e.g. the 15s poll overlaps a post-claim refresh) and the
+  // OLDER one resolves LAST, it must not clobber the newer value with a
+  // stale number. Every call stamps its own id; only the response whose id
+  // still matches the latest call is applied.
+  const claimableFetchId = useRef(0);
+
   const fetchClaimable = useCallback(async () => {
     if (!user) return;
+    const myId = ++claimableFetchId.current;
     try {
       const res  = await fetch(`/api/yield?userId=${user.id}`);
       const data = await res.json();
+      if (myId !== claimableFetchId.current) return; // a newer call has since started — drop this stale result
       setClaimable(typeof data.claimable === 'number' ? data.claimable : 0);
     } catch {}
   }, [user]);
