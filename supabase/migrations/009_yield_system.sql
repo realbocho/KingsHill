@@ -282,7 +282,13 @@ update occupancies o set
 
 -- ------------------------------------------------------------
 -- 10. RLS for the new audit table.
+--     create policy has no "if not exists", so drop-then-create makes
+--     this block safe to re-run if the migration was already applied.
 -- ------------------------------------------------------------
 alter table yield_payouts enable row level security;
+
+drop policy if exists "Service full access yield" on yield_payouts;
 create policy "Service full access yield"  on yield_payouts for all    using (auth.role() = 'service_role');
+
+drop policy if exists "Public read yield payouts" on yield_payouts;
 create policy "Public read yield payouts"  on yield_payouts for select using (true);

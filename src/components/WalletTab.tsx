@@ -53,7 +53,7 @@ export function WalletTab() {
     if (!user) return;
     const myId = ++claimableFetchId.current;
     try {
-      const res  = await fetch(`/api/yield?userId=${user.id}`);
+      const res  = await fetch(`/api/yield?userId=${user.id}`, { cache: 'no-store' });
       const data = await res.json();
       if (myId !== claimableFetchId.current) return; // a newer call has since started — drop this stale result
       setClaimable(typeof data.claimable === 'number' ? data.claimable : 0);
