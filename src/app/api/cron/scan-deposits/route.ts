@@ -7,6 +7,12 @@ import { fetchIncomingTransactions } from '@/lib/ton-wallet';
 import { logger } from '@/lib/logger';
 import { notifyDepositCredited } from '@/lib/notify';
 
+// Free GRAM bonuses are currently DISABLED — set this back to 0.1 (10%)
+// to resume paying referrers a cut of their friend's first deposit.
+// Referral LINKING (referred_by, first_deposit_done) is still tracked
+// either way; this only controls whether it pays out.
+const REFERRAL_BONUS_RATE = 0;
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
@@ -86,7 +92,9 @@ export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest)
       credited++;
       logger.info('deposit_credited', { userId: matchedUserId, amountTon, txHash: tx.hash });
 
-      // Referral bonus on first deposit: 10% of deposit (spend-only) to referrer
+      // Referral bonus on first deposit: REFERRAL_BONUS_RATE of deposit
+      // (spend-only) to referrer. Currently 0 = disabled; linking/tracking
+      // (first_deposit_done) still happens regardless so the data isn't lost.
       const { data: depositor } = await supabase
         .from('users')
         .select('referred_by, first_deposit_done')
@@ -96,30 +104,32 @@ export const GET = withApiHandler('cron-scan-deposits', async (req: NextRequest)
       if (depositor && !depositor.first_deposit_done && depositor.referred_by) {
         await supabase.from('users').update({ first_deposit_done: true }).eq('id', matchedUserId);
 
-        const referralBonus = Math.round(amountTon * 0.1 * 10000) / 10000;
+        const referralBonus = Math.round(amountTon * REFERRAL_BONUS_RATE * 10000) / 10000;
 
-        const { data: referrer } = await supabase
-          .from('users')
-          .select('wallet, total_bonus_received')
-          .eq('id', depositor.referred_by)
-          .eq('is_bot', false)
-          .single();
+        if (referralBonus > 0) {
+          const { data: referrer } = await supabase
+            .from('users')
+            .select('wallet, total_bonus_received')
+            .eq('id', depositor.referred_by)
+            .eq('is_bot', false)
+            .single();
 
-        if (referrer) {
-          await supabase.from('users').update({
-            wallet:               referrer.wallet + referralBonus,
-            total_bonus_received: referrer.total_bonus_received + referralBonus,
-          }).eq('id', depositor.referred_by);
+          if (referrer) {
+            await supabase.from('users').update({
+              wallet:               referrer.wallet + referralBonus,
+              total_bonus_received: referrer.total_bonus_received + referralBonus,
+            }).eq('id', depositor.referred_by);
 
-          await supabase.from('wallet_transactions').insert({
-            user_id:       depositor.referred_by,
-            type:          'reward',
-            amount:        referralBonus,
-            balance_after: referrer.wallet + referralBonus,
-            description:   `Referral bonus — friend deposited ${amountTon} TON`,
-          });
+            await supabase.from('wallet_transactions').insert({
+              user_id:       depositor.referred_by,
+              type:          'reward',
+              amount:        referralBonus,
+              balance_after: referrer.wallet + referralBonus,
+              description:   `Referral bonus — friend deposited ${amountTon} TON`,
+            });
 
-          logger.info('referral_deposit_bonus', { referrerId: depositor.referred_by, bonus: referralBonus });
+            logger.info('referral_deposit_bonus', { referrerId: depositor.referred_by, bonus: referralBonus });
+          }
         }
       }
 
