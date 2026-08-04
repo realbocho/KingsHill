@@ -10,7 +10,7 @@ import clsx from 'clsx';
 const EMOJIS = ['🔥', '⚡', '🚀', '💎', '👑', '🌟', '💰', '🎯', '🏆', '✨', '🦁', '🎪', '🌈', '🎸', '🍀'];
 const COLORS  = ['#FFD700', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#10B981', '#EC4899', '#F97316'];
 const DURATIONS = [1, 6, 12, 24];
-const YIELD_MAX_TON = 1;      // TON paid for a full-window hold
+const YIELD_MAX_TON = 0.5;    // TON paid for a full-window hold
 const YIELD_WINDOW_H = 24;    // hours to reach YIELD_MAX_TON
 
 interface Props {

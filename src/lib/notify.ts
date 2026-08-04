@@ -157,7 +157,7 @@ export async function notifyNewAd(
     `🔔 <b>New ad just claimed ${slotName}!</b>\n\n` +
     `${preview}\n\n` +
     `💥 <b>Seize it and get paid.</b> Take the spot for as little as <b>${nextBid.toFixed(4)} GRAM</b>.\n` +
-    `💧 Every second you hold it earns <b>real TON</b> — up to <b>1 TON / 24h</b>, withdrawable instantly, no strings.\n` +
+    `💧 Every second you hold it earns <b>real TON</b> — up to <b>0.5 TON / 24h</b>, withdrawable instantly, no strings.\n` +
     `💰 And if someone later outbids YOU, you pocket your stake back <b>+ 80% of their premium</b>.\n\n` +
     `👑 Tap in and take the hill before someone else does.`;
 

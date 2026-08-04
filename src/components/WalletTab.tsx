@@ -170,7 +170,7 @@ export function WalletTab() {
         <div className="p-4">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-emerald-300/80 uppercase tracking-widest">💧 Slot Yield</p>
-            <span className="text-[10px] text-emerald-300/70 font-mono">1 TON / 24h max</span>
+            <span className="text-[10px] text-emerald-300/70 font-mono">0.5 TON / 24h max</span>
           </div>
           <div className="flex items-end gap-2">
             <span className="text-3xl font-bold text-emerald-300 font-mono">{claimable.toFixed(4)}</span>
