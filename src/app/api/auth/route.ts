@@ -6,6 +6,11 @@ import { withApiHandler, ApiError } from '@/lib/api-helpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 
+// Free GRAM bonuses are currently DISABLED — new users must deposit real
+// TON to get GRAM. To resume the welcome bonus, set this back to a
+// positive amount (it was 7.0).
+const WELCOME_BONUS_GRAM = 0;
+
 export const POST = withApiHandler('auth', async (req: NextRequest) => {
   const { initData } = await req.json();
   if (!initData || typeof initData !== 'string') {
@@ -67,7 +72,7 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
         first_name:  tgUser.first_name ?? null,
         last_name:   tgUser.last_name  ?? null,
         photo_url:   tgUser.photo_url  ?? null,
-        wallet:      7.0,
+        wallet:      WELCOME_BONUS_GRAM,
       })
       .select()
       .single();
@@ -80,15 +85,17 @@ export const POST = withApiHandler('auth', async (req: NextRequest) => {
     userData = newUser;
     logger.info('user_created', { telegramId: tgUser.id, userId: newUser.id });
 
-    if (newUser) {
+    if (newUser && WELCOME_BONUS_GRAM > 0) {
       await client.from('wallet_transactions').insert({
         user_id:       newUser.id,
         type:          'topup',
-        amount:        7.0,
-        balance_after: 7.0,
-        description:   'Welcome bonus — 7 GRAM to get you started!',
+        amount:        WELCOME_BONUS_GRAM,
+        balance_after: WELCOME_BONUS_GRAM,
+        description:   `Welcome bonus — ${WELCOME_BONUS_GRAM} GRAM to get you started!`,
       });
+    }
 
+    if (newUser) {
       if (startParam?.startsWith('ref_')) {
         const referrerTelegramId = parseInt(startParam.slice(4), 10);
         if (!isNaN(referrerTelegramId) && referrerTelegramId !== tgUser.id) {

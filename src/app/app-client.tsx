@@ -64,10 +64,6 @@ function AppInner() {
 
       // Load initial data
       await Promise.all([refreshSlots(), refreshWallet()]);
-
-      if (data.user.total_spent === 0 && data.user.total_earned === 0) {
-        showToast('Welcome! 7 GRAM bonus added — use it to bid (not withdrawable). 🎁', 'success');
-      }
     } catch (err) {
       console.error(err);
       dispatch({ type: 'SET_AUTH_ERROR', error: 'Connection failed' });

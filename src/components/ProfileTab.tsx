@@ -115,23 +115,14 @@ export function ProfileTab() {
         <div className="p-4 border-b border-brand-border">
           <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-1">👥 Invite Friends</p>
           <p className="text-xs text-brand-muted leading-relaxed">
-            Earn <span className="text-brand-gold font-bold">3 GRAM</span> when a friend you invite places their first bid.
-            Bonus is spend-only (not withdrawable).
+            Share your link and bring friends into King&apos;s Hill.
           </p>
         </div>
 
         <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-brand-card rounded-xl p-3 text-center">
-              <p className="text-[10px] text-brand-muted uppercase">Friends Invited</p>
-              <p className="text-lg font-bold text-brand-gold">{(user as any)?.referral_count ?? 0}</p>
-            </div>
-            <div className="bg-brand-card rounded-xl p-3 text-center">
-              <p className="text-[10px] text-brand-muted uppercase">Bonus Earned</p>
-              <p className="text-lg font-bold text-green-400">
-                {formatGramsShort(((user as any)?.referral_count ?? 0) * 3)} GRAM
-              </p>
-            </div>
+          <div className="bg-brand-card rounded-xl p-3 text-center">
+            <p className="text-[10px] text-brand-muted uppercase">Friends Invited</p>
+            <p className="text-lg font-bold text-brand-gold">{(user as any)?.referral_count ?? 0}</p>
           </div>
 
           <div className="rounded-xl bg-brand-card border border-brand-border px-3 py-2.5 flex items-center gap-2">
