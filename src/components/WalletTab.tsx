@@ -33,6 +33,16 @@ const TX_COLORS: Record<string, string> = {
   yield:  'text-emerald-400',
 };
 
+// ────────────────────────────────────────────────────────────────
+// TEMPORARY NOTICE — withdrawals go live once the master wallet is
+// funded. Set this to the date/time withdrawals start working. The
+// banner below shows (and the Withdraw button stays disabled) only
+// until this moment, then both revert on their own — no code to
+// delete later. Timezone here is KST (+09:00); change the string to
+// your actual go-live time.  Example: '2026-07-30T09:00:00+09:00'
+// ────────────────────────────────────────────────────────────────
+const WITHDRAWALS_LIVE_AT = new Date('2026-08-07T09:00:00+09:00');
+
 export function WalletTab() {
   const { state, dispatch, refreshWallet, showToast } = useApp();
   const { user, walletTxs } = state;
@@ -117,8 +127,25 @@ export function WalletTab() {
   const withdrawableBalance = user?.withdrawable_balance ?? 0;
   const bonusBalance        = Math.max(0, totalBalance - withdrawableBalance);
 
+  // Temporary pre-launch notice: true until the master wallet is funded.
+  const withdrawalsPending = Date.now() < WITHDRAWALS_LIVE_AT.getTime();
+  const goLiveLabel = WITHDRAWALS_LIVE_AT.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
   return (
     <div className="flex-1 overflow-y-auto">
+      {withdrawalsPending && (
+        <div className="mx-3 mt-3 rounded-xl border border-amber-800/50 bg-amber-950/30 p-3">
+          <p className="text-xs font-bold text-amber-300 mb-1">⏳ Withdrawals open soon</p>
+          <p className="text-[11px] text-amber-100/80 leading-relaxed">
+            We&apos;re finishing funding the payout wallet. Withdrawals become available on{' '}
+            <span className="font-bold text-amber-200">{goLiveLabel}</span>. You can deposit, bid, and
+            keep earning yield right now — any balance and yield you build up stays yours and will be
+            fully withdrawable the moment withdrawals go live. Thanks for your patience!
+          </p>
+        </div>
+      )}
 
       <div className="m-3 rounded-2xl overflow-hidden" style={{
         background: 'linear-gradient(135deg, #1A1A10, #2A2000)',
@@ -209,10 +236,16 @@ export function WalletTab() {
           ⬇ Deposit
         </button>
         <button
-          onClick={() => setShowWithdraw(true)}
-          className="py-3.5 rounded-xl font-bold text-sm bg-brand-surface border border-brand-border text-brand-text flex items-center justify-center gap-1.5"
+          onClick={() => { if (!withdrawalsPending) setShowWithdraw(true); }}
+          disabled={withdrawalsPending}
+          className={clsx(
+            'py-3.5 rounded-xl font-bold text-sm border flex items-center justify-center gap-1.5',
+            withdrawalsPending
+              ? 'bg-brand-surface/50 border-brand-border text-brand-muted cursor-not-allowed'
+              : 'bg-brand-surface border-brand-border text-brand-text',
+          )}
         >
-          ⬆ Withdraw
+          {withdrawalsPending ? `⬆ Opens ${goLiveLabel}` : '⬆ Withdraw'}
         </button>
       </div>
 
